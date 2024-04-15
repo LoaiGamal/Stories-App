@@ -18,7 +18,7 @@ import org.zwobble.mammoth.DocumentConverter
 import org.zwobble.mammoth.Result
 
 class MainActivity : AppCompatActivity() {
-    var textSize = 0f
+    private var textSize = 0f
     private lateinit var textAdapter: TextAdapter
 
 
@@ -60,9 +60,9 @@ class MainActivity : AppCompatActivity() {
         val textRecyclerView: RecyclerView = findViewById(R.id.textRecyclerView)
         textRecyclerView.adapter = textAdapter
         textAdapter.setOnTitleClickListener(object : TextAdapter.OnItemClickListener {
-            override fun onTitleClicked(titleID: Int) {
-                Log.i("Title ID", titleID.toString())
-                val bodyID = organizedList.indexOfFirst { it is Text.Body && it.id == titleID }
+            override fun onTitleClicked(titleId: Int) {
+                Log.i("Title ID", titleId.toString())
+                val bodyID = organizedList.indexOfFirst { it is Text.Body && it.id == titleId }
                 Log.i("Body Id", bodyID.toString())
                 textRecyclerView.scrollToPosition(bodyID)
             }
