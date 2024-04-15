@@ -1,6 +1,7 @@
 package com.example.storiesapp.ui
 
 import android.annotation.SuppressLint
+import android.graphics.Color
 import android.text.SpannableString
 import android.text.style.UnderlineSpan
 import android.util.TypedValue
@@ -17,20 +18,17 @@ import com.example.storiesapp.data.Text
 
 var textSize = 14f
 
-class TextAdapter:
+class TextAdapter():
     ListAdapter<Text, RecyclerView.ViewHolder>(TextDiffCallback()) {
 
-        private lateinit var itemClickListener: OnItemClickListener
-
-        fun setOnTitleClickListener(listener: OnItemClickListener){
-            itemClickListener = listener
-        }
+    private var listener: OnItemClickListener? = null
+    private var textColor: String? = null
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
             VIEW_TYPE_TITLE -> {
                 val view =
                     LayoutInflater.from(parent.context).inflate(R.layout.item_title, parent, false)
-                TitleViewHolder(view, itemClickListener)
+                TitleViewHolder(view, listener!!)
             }
 
             VIEW_TYPE_HEADLINE -> {
@@ -51,10 +49,11 @@ class TextAdapter:
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = getItem(position)
+
         when (holder) {
             is TitleViewHolder -> holder.bind(item as Text.Title)
             is HeadlineViewHolder -> holder.bind(item as Text.Headline)
-            is BodyViewHolder -> holder.bind(item as Text.Body)
+            is BodyViewHolder -> holder.bind(item as Text.Body, textColor)
         }
     }
 
@@ -64,6 +63,10 @@ class TextAdapter:
             is Text.Headline -> VIEW_TYPE_HEADLINE
             is Text.Body -> VIEW_TYPE_BODY
         }
+    }
+
+    fun setOnTitleClickListener(listener: OnItemClickListener) {
+        this.listener = listener
     }
 
     // View holders
@@ -76,6 +79,7 @@ class TextAdapter:
                 listener.onTitleClicked(adapterPosition)
             }
         }
+
         fun bind(item: Text.Title) {
             titleTextView.text = item.title
             titleTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize)
@@ -91,14 +95,18 @@ class TextAdapter:
         fun bind(item: Text.Headline) {
             headlineTextView.text = item.headline
             headlineTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize)
+            headlineTextView.setTextColor(Color.parseColor("#0000FF"))
         }
     }
 
     class BodyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val bodyTextView: TextView = itemView.findViewById(R.id.bodyTextView)
-        fun bind(item: Text.Body) {
+        fun bind(item: Text.Body, color: String?) {
             bodyTextView.text = item.body
             bodyTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize)
+            if (color != null){
+                bodyTextView.setTextColor(Color.parseColor(color))
+            }
         }
     }
 
@@ -117,9 +125,14 @@ class TextAdapter:
 
     @SuppressLint("NotifyDataSetChanged")
     fun decreaseTextSize() {
-        textSize -= 4f
-        if (textSize <= 0f)
+        if (textSize - 4 <= 0f)
             return
+        textSize -= 4f
+        notifyDataSetChanged()
+    }
+
+    fun pickTextColor(color: String){
+        textColor = color
         notifyDataSetChanged()
     }
 

@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">Stories App</string>
     <string name="most_beautiful_short_stories">أجمل القصص القصيرة</string>
+    <string name="text_size_increase">Text Size Increase</string>
+    <string name="search">Search</string>
+    <string name="change_background_color">Change Background Color</string>
+    <string name="text_size_decrease">Text Size Decrease</string>
+    <string name="temp_string">في البدء كان الكلمة</string>
 </resources>

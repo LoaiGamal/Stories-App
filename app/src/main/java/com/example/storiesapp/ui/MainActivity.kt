@@ -1,26 +1,43 @@
 package com.example.storiesapp.ui
 
+import android.app.Dialog
+import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.SpannableString
 import android.text.style.UnderlineSpan
 import android.util.Log
 import android.util.TypedValue
+import android.view.View
 import android.widget.Button
+import android.widget.ImageButton
+import android.widget.LinearLayout
+import android.widget.ListAdapter
+import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.storiesapp.R
 import com.example.storiesapp.data.Text
+import com.example.storiesapp.databinding.RgbLayoutDialogBinding
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import org.zwobble.mammoth.DocumentConverter
 import org.zwobble.mammoth.Result
 
 class MainActivity : AppCompatActivity() {
     private var textSize = 0f
     private lateinit var textAdapter: TextAdapter
+    var oldBackgroundColors: List<String> = listOf("255", "255", "255", "")
+    var oldTextColors: List<String> = listOf("0", "0", "0", "")
+    private var isText: Boolean? = null
 
+    private val rgbLayoutDialogBinding: RgbLayoutDialogBinding by lazy {
+        RgbLayoutDialogBinding.inflate(layoutInflater)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,43 +61,118 @@ class MainActivity : AppCompatActivity() {
         val result: Result<String>? =
             converter.extractRawText(assets.open("أجمل القصص القصيرة.docx"))
         val rawText = result?.value
-        Log.i("Loai", rawText.toString())
 
         var lines = rawText!!.split("\n")
-        Log.i("TAAAAAG", lines.size.toString())
-
         lines = removeValuesViaIteration(lines.toMutableList())
-        Log.i("TAAAAAG", lines.size.toString())
-
         val organizedList = convertStringListToTextList(lines)
-        Log.i("Converted", organizedList.size.toString())
 
         textAdapter = TextAdapter()
         textAdapter.submitList(organizedList)
         val textRecyclerView: RecyclerView = findViewById(R.id.textRecyclerView)
         textRecyclerView.adapter = textAdapter
+        textRecyclerView.layoutManager = LinearLayoutManager(this)
         textAdapter.setOnTitleClickListener(object : TextAdapter.OnItemClickListener {
             override fun onTitleClicked(titleId: Int) {
                 Log.i("Title ID", titleId.toString())
                 val bodyID = organizedList.indexOfFirst { it is Text.Body && it.id == titleId }
                 Log.i("Body Id", bodyID.toString())
-                textRecyclerView.scrollToPosition(bodyID)
+                textRecyclerView.smoothScrollToPosition(bodyID)
             }
         })
 
 
-        val btn: Button = findViewById(R.id.btn)
-//
         val appTitle: TextView = findViewById(R.id.titleTxtView)
         textSize = appTitle.textSize / 4
         Log.i("BeforeIncreasing", textSize.toString())
-        btn.setOnClickListener {
+
+        val increaseTextSizeBtn: ImageButton = findViewById(R.id.textSizeIncrease)
+        increaseTextSizeBtn.setOnClickListener {
             textSize += 4f
-            Log.i("textSize", textSize.toString())
             appTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize)
-            Log.i("Increase", appTitle.textSize.toString())
             textAdapter.increaseTextSize()
         }
+
+        val decreaseTextSizeBtn: ImageButton = findViewById(R.id.textSizeDecrease)
+        decreaseTextSizeBtn.setOnClickListener {
+            textAdapter.decreaseTextSize()
+            if (textSize - 4f <= 0f)
+                appTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize)
+            else {
+                textSize -= 4f
+                appTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize)
+            }
+        }
+
+        val rgbDialog = Dialog(this).apply {
+            setContentView(rgbLayoutDialogBinding.root)
+            window!!.setLayout(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setCancelable(false)
+        }
+        setOnSeekbar(
+            "R",
+            rgbLayoutDialogBinding.redLayout.typeTxt,
+            rgbLayoutDialogBinding.redLayout.seekBar,
+            rgbLayoutDialogBinding.redLayout.colorValueTxt
+        )
+        setOnSeekbar(
+            "G",
+            rgbLayoutDialogBinding.greenLayout.typeTxt,
+            rgbLayoutDialogBinding.greenLayout.seekBar,
+            rgbLayoutDialogBinding.greenLayout.colorValueTxt
+        )
+        setOnSeekbar(
+            "B",
+            rgbLayoutDialogBinding.blueLayout.typeTxt,
+            rgbLayoutDialogBinding.blueLayout.seekBar,
+            rgbLayoutDialogBinding.blueLayout.colorValueTxt
+        )
+        rgbLayoutDialogBinding.cancelBtn.setOnClickListener {
+            if (isText!!) {
+                rgbLayoutDialogBinding.redLayout.seekBar.progress = oldTextColors[0].toInt()
+                rgbLayoutDialogBinding.greenLayout.seekBar.progress = oldTextColors[1].toInt()
+                rgbLayoutDialogBinding.blueLayout.seekBar.progress = oldTextColors[2].toInt()
+            } else if (!isText!!) {
+                rgbLayoutDialogBinding.redLayout.seekBar.progress = oldBackgroundColors[0].toInt()
+                rgbLayoutDialogBinding.greenLayout.seekBar.progress = oldBackgroundColors[1].toInt()
+                rgbLayoutDialogBinding.blueLayout.seekBar.progress = oldBackgroundColors[2].toInt()
+            }
+            rgbDialog.dismiss()
+            Log.i("Cancel", oldBackgroundColors.toString())
+        }
+        rgbLayoutDialogBinding.pickBtn.setOnClickListener {
+            if (!isText!!) {
+                oldBackgroundColors = setRGBColor("Background")
+                val screenBackground: View = findViewById(R.id.main)
+                screenBackground.setBackgroundColor(Color.parseColor(oldBackgroundColors[3]))
+//                Log.i("Hex", oldBackgroundColors[3])
+            } else if (isText!!) {
+                oldTextColors = setRGBColor("Text")
+                textAdapter.pickTextColor(oldTextColors[3])
+            }
+            rgbDialog.dismiss()
+        }
+
+        val changingTextColorBtn: Button = findViewById(R.id.changeTextColor)
+        changingTextColorBtn.setOnClickListener {
+            isText = true
+            rgbLayoutDialogBinding.redLayout.seekBar.progress = oldTextColors[0].toInt()
+            rgbLayoutDialogBinding.greenLayout.seekBar.progress = oldTextColors[1].toInt()
+            rgbLayoutDialogBinding.blueLayout.seekBar.progress = oldTextColors[2].toInt()
+            rgbDialog.show()
+        }
+
+        val backgroundChangingColorBtn: ImageButton = findViewById(R.id.changeBackgroundColor)
+        backgroundChangingColorBtn.setOnClickListener {
+            isText = false
+            rgbLayoutDialogBinding.redLayout.seekBar.progress = oldBackgroundColors[0].toInt()
+            rgbLayoutDialogBinding.greenLayout.seekBar.progress = oldBackgroundColors[1].toInt()
+            rgbLayoutDialogBinding.blueLayout.seekBar.progress = oldBackgroundColors[2].toInt()
+            rgbDialog.show()
+        }
+
     }
 
     private fun removeValuesViaIteration(listWithNullsAndEmpty: MutableList<String?>): List<String> {
@@ -116,5 +208,55 @@ class MainActivity : AppCompatActivity() {
         }
 
         return newList
+    }
+
+    private fun setOnSeekbar(
+        type: String,
+        typeTxt: TextView,
+        seekBar: SeekBar,
+        colorTxt: TextView
+    ) {
+        when (type) {
+            "R" -> typeTxt.setBackgroundResource(R.color.red)
+            "G" -> typeTxt.setBackgroundResource(R.color.green)
+            "B" -> typeTxt.setBackgroundResource(R.color.blue)
+        }
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                colorTxt.text = seekBar.progress.toString()
+                if (!isText!!) {
+                    setRGBColor("Background")
+                } else if (isText!!) {
+                    setRGBColor("Text")
+                }
+            }
+
+            override fun onStartTrackingTouch(p0: SeekBar?) {}
+            override fun onStopTrackingTouch(p0: SeekBar?) {}
+
+        })
+        colorTxt.text = seekBar.progress.toString()
+    }
+
+    private fun setRGBColor(viewType: String): List<String> {
+
+        val list = mutableListOf<String>()
+        val hex = String.format(
+            "#%02x%02x%02x",
+            rgbLayoutDialogBinding.redLayout.seekBar.progress,
+            rgbLayoutDialogBinding.greenLayout.seekBar.progress,
+            rgbLayoutDialogBinding.blueLayout.seekBar.progress
+        )
+
+        if (viewType == "Background") {
+            rgbLayoutDialogBinding.colorView.setBackgroundColor(Color.parseColor(hex))
+        } else if (viewType == "Text") {
+            rgbLayoutDialogBinding.colorView.setTextColor(Color.parseColor(hex))
+        }
+        list.add(rgbLayoutDialogBinding.redLayout.seekBar.progress.toString())
+        list.add(rgbLayoutDialogBinding.greenLayout.seekBar.progress.toString())
+        list.add(rgbLayoutDialogBinding.blueLayout.seekBar.progress.toString())
+        list.add(hex)
+        return list
     }
 }
