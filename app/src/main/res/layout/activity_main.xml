@@ -90,17 +90,17 @@
             android:contentDescription="@string/change_background_color"
             android:src="@drawable/colors_fill_24"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/search"
+            app:layout_constraintEnd_toStartOf="@+id/searchBtn"
             app:layout_constraintStart_toEndOf="@+id/changeTextColor"
             app:layout_constraintTop_toTopOf="parent" />
 
         <ImageButton
-            android:id="@+id/search"
+            android:id="@+id/searchBtn"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="#00FFFFFF"
             android:contentDescription="@string/search"
-            android:src="@drawable/zoom_out_24"
+            android:src="@drawable/search_24"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/changeBackgroundColor"

@@ -2,7 +2,6 @@ package com.example.storiesapp.ui
 
 import android.app.Dialog
 import android.graphics.Color
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.SpannableString
 import android.text.style.UnderlineSpan
@@ -12,9 +11,9 @@ import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.LinearLayout
-import android.widget.ListAdapter
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -24,19 +23,25 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.storiesapp.R
 import com.example.storiesapp.data.Text
 import com.example.storiesapp.databinding.RgbLayoutDialogBinding
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.example.storiesapp.databinding.SearchDialogBinding
 import org.zwobble.mammoth.DocumentConverter
 import org.zwobble.mammoth.Result
 
 class MainActivity : AppCompatActivity() {
     private var textSize = 0f
     private lateinit var textAdapter: TextAdapter
-    var oldBackgroundColors: List<String> = listOf("255", "255", "255", "")
-    var oldTextColors: List<String> = listOf("0", "0", "0", "")
+    private var organizedList = listOf<Text>()
+    private var oldBackgroundColors: List<String> = listOf("255", "255", "255", "")
+    private var oldTextColors: List<String> = listOf("0", "0", "0", "")
     private var isText: Boolean? = null
+    private var searchedString: String? = null
 
     private val rgbLayoutDialogBinding: RgbLayoutDialogBinding by lazy {
         RgbLayoutDialogBinding.inflate(layoutInflater)
+    }
+
+    private val searchLayoutDialogBinding: SearchDialogBinding by lazy {
+        SearchDialogBinding.inflate(layoutInflater)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,7 +69,7 @@ class MainActivity : AppCompatActivity() {
 
         var lines = rawText!!.split("\n")
         lines = removeValuesViaIteration(lines.toMutableList())
-        val organizedList = convertStringListToTextList(lines)
+        organizedList = convertStringListToTextList(lines)
 
         textAdapter = TextAdapter()
         textAdapter.submitList(organizedList)
@@ -103,6 +108,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        val searchDialog = Dialog(this).apply {
+            setContentView(searchLayoutDialogBinding.root)
+            window!!.setLayout(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setCancelable(false)
+        }
+
         val rgbDialog = Dialog(this).apply {
             setContentView(rgbLayoutDialogBinding.root)
             window!!.setLayout(
@@ -134,7 +148,7 @@ class MainActivity : AppCompatActivity() {
                 rgbLayoutDialogBinding.redLayout.seekBar.progress = oldTextColors[0].toInt()
                 rgbLayoutDialogBinding.greenLayout.seekBar.progress = oldTextColors[1].toInt()
                 rgbLayoutDialogBinding.blueLayout.seekBar.progress = oldTextColors[2].toInt()
-            } else if (!isText!!) {
+            } else {
                 rgbLayoutDialogBinding.redLayout.seekBar.progress = oldBackgroundColors[0].toInt()
                 rgbLayoutDialogBinding.greenLayout.seekBar.progress = oldBackgroundColors[1].toInt()
                 rgbLayoutDialogBinding.blueLayout.seekBar.progress = oldBackgroundColors[2].toInt()
@@ -147,7 +161,6 @@ class MainActivity : AppCompatActivity() {
                 oldBackgroundColors = setRGBColor("Background")
                 val screenBackground: View = findViewById(R.id.main)
                 screenBackground.setBackgroundColor(Color.parseColor(oldBackgroundColors[3]))
-//                Log.i("Hex", oldBackgroundColors[3])
             } else if (isText!!) {
                 oldTextColors = setRGBColor("Text")
                 textAdapter.pickTextColor(oldTextColors[3])
@@ -171,6 +184,33 @@ class MainActivity : AppCompatActivity() {
             rgbLayoutDialogBinding.greenLayout.seekBar.progress = oldBackgroundColors[1].toInt()
             rgbLayoutDialogBinding.blueLayout.seekBar.progress = oldBackgroundColors[2].toInt()
             rgbDialog.show()
+        }
+
+        searchLayoutDialogBinding.cancelBtn.setOnClickListener {
+            searchDialog.dismiss()
+        }
+
+        searchLayoutDialogBinding.pickBtn.setOnClickListener {
+            searchedString = getSearchedString()
+            if (searchedString == null) {
+                Toast.makeText(this, "من فضلك أكتب نص تريد البحث عنه!", Toast.LENGTH_LONG).show()
+            } else {
+                val sentenceSearchedIndex = makeSearch(searchedString!!)
+                if (sentenceSearchedIndex == -1)
+                    Toast.makeText(this, "هذه العبارة لم يتم العثور عليها", Toast.LENGTH_SHORT)
+                        .show()
+                else {
+                    textRecyclerView.smoothScrollToPosition(sentenceSearchedIndex)
+                }
+
+                searchLayoutDialogBinding.searchEditText.setText("")
+            }
+            searchDialog.dismiss()
+        }
+
+        val searchBtn: ImageButton = findViewById(R.id.searchBtn)
+        searchBtn.setOnClickListener {
+            searchDialog.show()
         }
 
     }
@@ -259,4 +299,27 @@ class MainActivity : AppCompatActivity() {
         list.add(hex)
         return list
     }
+
+    private fun getSearchedString(): String? {
+        val editTextInput: String?
+        if (searchLayoutDialogBinding.searchEditText.text.toString() == "")
+            return null
+        editTextInput = searchLayoutDialogBinding.searchEditText.text.toString()
+        return editTextInput
+    }
+
+    private fun makeSearch(sentence: String): Int {
+        var temp = -1
+
+        temp = organizedList.indexOfFirst { it is Text.Headline && it.headline.contains(sentence) }
+        if (temp > -1)
+            return temp
+
+        temp = organizedList.indexOfFirst { it is Text.Body && it.body.contains(sentence) }
+        if (temp > -1)
+            return temp
+
+        return temp
+    }
+
 }
