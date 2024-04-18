@@ -142,7 +142,7 @@ class TextAdapter() :
             getSelectedText(bodyTextView, adapterPosition, item.spannableString)
         }
     }
-
+//
 
     @SuppressLint("NotifyDataSetChanged")
     fun increaseTextSize() {
