@@ -54,6 +54,7 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
+        // Set the app title
         val text: String = getString(R.string.most_beautiful_short_stories)
         val mSpannableString = SpannableString(text)
         mSpannableString.setSpan(UnderlineSpan(), 0, mSpannableString.length, 0)
@@ -62,15 +63,19 @@ class MainActivity : AppCompatActivity() {
         appTitleTxtView.text = mSpannableString
 
 
+        // Read the document
         val converter = DocumentConverter()
         val result: Result<String>? =
             converter.extractRawText(assets.open("أجمل القصص القصيرة.docx"))
         val rawText = result?.value
 
+        // Split the document into sentences and filter it
         var lines = rawText!!.split("\n")
         lines = removeValuesViaIteration(lines.toMutableList())
         organizedList = convertStringListToTextList(lines).toMutableList()
 
+
+        // Initialize recycler view adapter and set the listeners
         textAdapter = TextAdapter()
         textAdapter.submitList(organizedList)
         val textRecyclerView: RecyclerView = findViewById(R.id.textRecyclerView)
@@ -78,9 +83,9 @@ class MainActivity : AppCompatActivity() {
         textRecyclerView.layoutManager = LinearLayoutManager(this)
         textAdapter.setOnTitleClickListener(object : TextAdapter.OnItemClickListener {
             override fun onTitleClicked(titleId: Int) {
-                Log.i("Title ID", titleId.toString())
+                Log.i("LOGGER", "Title ID: ${titleId.toString()}")
                 val bodyID = organizedList.indexOfFirst { it is Text.Body && it.id == titleId }
-                Log.i("Body Id", bodyID.toString())
+                Log.i("LOGGER", "Body Id: ${bodyID.toString()}")
                 textRecyclerView.smoothScrollToPosition(bodyID)
             }
         })
@@ -90,9 +95,9 @@ class MainActivity : AppCompatActivity() {
                 if (organizedList[index] is Text.Body){
                     var temp = organizedList[index] as Text.Body
                     temp = Text.Body(index, temp.body, text)
-                    Log.d("LOGGERLOAI", "before add: ${organizedList[index].toString()}")
+                    Log.d("LOGGER", "before add: ${organizedList[index].toString()}")
                     organizedList[index] = temp
-                    Log.d("LOGGERLOAI", "after add: ${organizedList[index].toString()}")
+                    Log.d("LOGGER", "after add: ${organizedList[index].toString()}")
                 }
             }
 
@@ -101,8 +106,9 @@ class MainActivity : AppCompatActivity() {
 
         val appTitle: TextView = findViewById(R.id.titleTxtView)
         textSize = appTitle.textSize / 4
-        Log.i("BeforeIncreasing", textSize.toString())
+        Log.i("LOGGER", "Before Increasing: ${textSize.toString()}")
 
+        // Increase text size
         val increaseTextSizeBtn: ImageButton = findViewById(R.id.textSizeIncrease)
         increaseTextSizeBtn.setOnClickListener {
             textSize += 4f
@@ -110,6 +116,8 @@ class MainActivity : AppCompatActivity() {
             textAdapter.increaseTextSize()
         }
 
+
+        // Decrease text size
         val decreaseTextSizeBtn: ImageButton = findViewById(R.id.textSizeDecrease)
         decreaseTextSizeBtn.setOnClickListener {
             textAdapter.decreaseTextSize()
@@ -121,15 +129,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val searchDialog = Dialog(this).apply {
-            setContentView(searchLayoutDialogBinding.root)
-            window!!.setLayout(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            setCancelable(false)
-        }
-
+        // Set the rgb dialog for change the text and background colors
         val rgbDialog = Dialog(this).apply {
             setContentView(rgbLayoutDialogBinding.root)
             window!!.setLayout(
@@ -181,6 +181,7 @@ class MainActivity : AppCompatActivity() {
             rgbDialog.dismiss()
         }
 
+        // Change text color
         val changingTextColorBtn: Button = findViewById(R.id.changeTextColor)
         changingTextColorBtn.setOnClickListener {
             isText = true
@@ -190,6 +191,8 @@ class MainActivity : AppCompatActivity() {
             rgbDialog.show()
         }
 
+
+        // Change background color
         val backgroundChangingColorBtn: ImageButton = findViewById(R.id.changeBackgroundColor)
         backgroundChangingColorBtn.setOnClickListener {
             isText = false
@@ -197,6 +200,16 @@ class MainActivity : AppCompatActivity() {
             rgbLayoutDialogBinding.greenLayout.seekBar.progress = oldBackgroundColors[1].toInt()
             rgbLayoutDialogBinding.blueLayout.seekBar.progress = oldBackgroundColors[2].toInt()
             rgbDialog.show()
+        }
+
+        // Set the search dialog
+        val searchDialog = Dialog(this).apply {
+            setContentView(searchLayoutDialogBinding.root)
+            window!!.setLayout(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setCancelable(false)
         }
 
         searchLayoutDialogBinding.cancelBtn.setOnClickListener {
@@ -221,6 +234,7 @@ class MainActivity : AppCompatActivity() {
             searchDialog.dismiss()
         }
 
+        // Searching
         val searchBtn: ImageButton = findViewById(R.id.searchBtn)
         searchBtn.setOnClickListener {
             searchDialog.show()

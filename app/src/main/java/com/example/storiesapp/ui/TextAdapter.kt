@@ -28,11 +28,12 @@ const val DEFINITION = 0
 class TextAdapter() :
     ListAdapter<Text, RecyclerView.ViewHolder>(TextDiffCallback()) {
 
+    // Initialized variables
     private var listener: OnItemClickListener? = null
     private var textHighlightListener: TextHighlightListener? = null
     private var textColor: String? = null
-    var spannableString: SpannableString? = null
 
+    // View types {Titles, Headlines, Bodies}
     companion object {
         private const val VIEW_TYPE_TITLE = 0
         private const val VIEW_TYPE_HEADLINE = 1
@@ -81,10 +82,13 @@ class TextAdapter() :
         }
     }
 
+
+    // On title click listener to link with story body
     fun setOnTitleClickListener(listener: OnItemClickListener) {
         this.listener = listener
     }
 
+    // Save the text that the user wants to highlight in the list in MainActivity
     fun setTextHighlightListener(listener: TextHighlightListener) {
         this.textHighlightListener = listener
     }
@@ -142,14 +146,15 @@ class TextAdapter() :
             getSelectedText(bodyTextView, adapterPosition, item.spannableString)
         }
     }
-//
 
+    // Increase the text size
     @SuppressLint("NotifyDataSetChanged")
     fun increaseTextSize() {
         textSize += 4f
         notifyDataSetChanged()
     }
 
+    // Decrease the text size
     @SuppressLint("NotifyDataSetChanged")
     fun decreaseTextSize() {
         if (textSize - 4 <= 0f)
@@ -158,6 +163,7 @@ class TextAdapter() :
         notifyDataSetChanged()
     }
 
+    // Change the text color
     @SuppressLint("NotifyDataSetChanged")
     fun pickTextColor(color: String) {
         textColor = color
@@ -165,6 +171,7 @@ class TextAdapter() :
     }
 
 
+    // Interfaces to connect MainActivity with TextAdapter
     interface OnItemClickListener {
         fun onTitleClicked(titleId: Int)
     }
@@ -173,6 +180,7 @@ class TextAdapter() :
         fun onTextHighlighted(text: SpannableString, index: Int)
     }
 
+    // Allow the user to select text and highlight it
     fun getSelectedText(view: TextView, adapterPosition: Int, spannableString: SpannableString?) {
         Log.d("LOGGER", "getSelectedText")
         if (view.customSelectionActionModeCallback != null) {
@@ -218,15 +226,15 @@ class TextAdapter() :
                             max = Math.max(0, Math.max(selStart, selEnd))
                         }
 
-                        Log.d("LOGGERHIGH", "min: ${min}")
-                        Log.d("LOGGERHIGH", "max: ${max}")
+                        Log.d("LOGGER", "min: ${min}")
+                        Log.d("LOGGER", "max: ${max}")
 
                         val span = spannableString ?: SpannableString(view.text)
                         val highlightedText = highlightText(span, min, max)
                         view.text = highlightedText
 
 
-                        Log.d("LOGGERHIGH", "${currentList[adapterPosition]}")
+                        Log.d("LOGGER", "${currentList[adapterPosition]}")
                         textHighlightListener?.onTextHighlighted(highlightedText, adapterPosition)
                         notifyDataSetChanged()
 
@@ -240,6 +248,7 @@ class TextAdapter() :
         })
     }
 
+    // Highlight the selected text
     fun highlightText(text: SpannableString, min: Int, max: Int): SpannableString {
         text.setSpan(BackgroundColorSpan(Color.YELLOW), min, max, 0)
         return text
