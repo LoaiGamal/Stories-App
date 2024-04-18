@@ -30,7 +30,7 @@ import org.zwobble.mammoth.Result
 class MainActivity : AppCompatActivity() {
     private var textSize = 0f
     private lateinit var textAdapter: TextAdapter
-    private var organizedList = listOf<Text>()
+    private var organizedList = mutableListOf<Text>()
     private var oldBackgroundColors: List<String> = listOf("255", "255", "255", "")
     private var oldTextColors: List<String> = listOf("0", "0", "0", "")
     private var isText: Boolean? = null
@@ -69,7 +69,7 @@ class MainActivity : AppCompatActivity() {
 
         var lines = rawText!!.split("\n")
         lines = removeValuesViaIteration(lines.toMutableList())
-        organizedList = convertStringListToTextList(lines)
+        organizedList = convertStringListToTextList(lines).toMutableList()
 
         textAdapter = TextAdapter()
         textAdapter.submitList(organizedList)
@@ -83,6 +83,19 @@ class MainActivity : AppCompatActivity() {
                 Log.i("Body Id", bodyID.toString())
                 textRecyclerView.smoothScrollToPosition(bodyID)
             }
+        })
+
+        textAdapter.setTextHighlightListener(object : TextAdapter.TextHighlightListener {
+            override fun onTextHighlighted(text: SpannableString, index: Int) {
+                if (organizedList[index] is Text.Body){
+                    var temp = organizedList[index] as Text.Body
+                    temp = Text.Body(index, temp.body, text)
+                    Log.d("LOGGERLOAI", "before add: ${organizedList[index].toString()}")
+                    organizedList[index] = temp
+                    Log.d("LOGGERLOAI", "after add: ${organizedList[index].toString()}")
+                }
+            }
+
         })
 
 

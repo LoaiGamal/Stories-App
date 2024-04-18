@@ -8,11 +8,12 @@
         android:id="@+id/titleTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         android:layout_margin="8dp"
         android:hint="Loai Gamal Mohamed El_Sayed"
         android:textColor="#071688"
         android:textSize="16sp"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
