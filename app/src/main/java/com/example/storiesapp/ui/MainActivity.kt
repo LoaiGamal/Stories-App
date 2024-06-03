@@ -18,6 +18,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.storiesapp.R
@@ -28,9 +29,10 @@ import org.zwobble.mammoth.DocumentConverter
 import org.zwobble.mammoth.Result
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var viewModel: MainViewModel
+
     private var textSize = 0f
     private lateinit var textAdapter: TextAdapter
-    private var organizedList = mutableListOf<Text>()
     private var oldBackgroundColors: List<String> = listOf("255", "255", "255", "")
     private var oldTextColors: List<String> = listOf("0", "0", "0", "")
     private var isText: Boolean? = null
@@ -48,6 +50,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+
+        viewModel = ViewModelProvider(this)[MainViewModel::class.java]
+
+        viewModel.getOrganizedList()
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -63,44 +70,38 @@ class MainActivity : AppCompatActivity() {
         appTitleTxtView.text = mSpannableString
 
 
-        // Read the document
-        val converter = DocumentConverter()
-        val result: Result<String>? =
-            converter.extractRawText(assets.open("أجمل القصص القصيرة.docx"))
-        val rawText = result?.value
-
-        // Split the document into sentences and filter it
-        var lines = rawText!!.split("\n")
-        lines = removeValuesViaIteration(lines.toMutableList())
-        organizedList = convertStringListToTextList(lines).toMutableList()
-
-
         // Initialize recycler view adapter and set the listeners
         textAdapter = TextAdapter()
-        textAdapter.submitList(organizedList)
+        viewModel.organizedList.observe(this) {
+            textAdapter.submitList(it)
+        }
         val textRecyclerView: RecyclerView = findViewById(R.id.textRecyclerView)
         textRecyclerView.adapter = textAdapter
         textRecyclerView.layoutManager = LinearLayoutManager(this)
         textAdapter.setOnTitleClickListener(object : TextAdapter.OnItemClickListener {
             override fun onTitleClicked(titleId: Int) {
                 Log.i("LOGGER", "Title ID: ${titleId.toString()}")
-                val bodyID = organizedList.indexOfFirst { it is Text.Body && it.id == titleId }
+                val bodyID =
+                    viewModel.organizedList.value!!.indexOfFirst { it is Text.Body && it.id == titleId }
                 Log.i("LOGGER", "Body Id: ${bodyID.toString()}")
                 textRecyclerView.smoothScrollToPosition(bodyID)
             }
         })
 
+
         textAdapter.setTextHighlightListener(object : TextAdapter.TextHighlightListener {
             override fun onTextHighlighted(text: SpannableString, index: Int) {
-                if (organizedList[index] is Text.Body){
-                    var temp = organizedList[index] as Text.Body
+                if (viewModel.organizedList.value!![index] is Text.Body) {
+                    var temp = viewModel.organizedList.value!![index] as Text.Body
                     temp = Text.Body(index, temp.body, text)
-                    Log.d("LOGGER", "before add: ${organizedList[index].toString()}")
-                    organizedList[index] = temp
-                    Log.d("LOGGER", "after add: ${organizedList[index].toString()}")
+                    Log.d(
+                        "LOGGER",
+                        "before add: ${viewModel.organizedList.value!![index].toString()}"
+                    )
+                    viewModel.highlightText(index, temp)
+//                    Log.d("LOGGER", "after add: ${organizedList[index].toString()}")
                 }
             }
-
         })
 
 
@@ -221,7 +222,7 @@ class MainActivity : AppCompatActivity() {
             if (searchedString == null) {
                 Toast.makeText(this, "من فضلك أكتب نص تريد البحث عنه!", Toast.LENGTH_LONG).show()
             } else {
-                val sentenceSearchedIndex = makeSearch(searchedString!!)
+                val sentenceSearchedIndex = viewModel.makeSearch(searchedString!!)
                 if (sentenceSearchedIndex == -1)
                     Toast.makeText(this, "هذه العبارة لم يتم العثور عليها", Toast.LENGTH_SHORT)
                         .show()
@@ -242,40 +243,6 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun removeValuesViaIteration(listWithNullsAndEmpty: MutableList<String?>): List<String> {
-        val iterator = listWithNullsAndEmpty.iterator()
-        while (iterator.hasNext()) {
-            val element = iterator.next()
-            if (element.isNullOrEmpty()) {
-                iterator.remove()
-            }
-        }
-        listWithNullsAndEmpty.removeAt(0)
-        return listWithNullsAndEmpty as List<String>
-    }
-
-    private fun convertStringListToTextList(list: List<String>): List<Text> {
-        val newList = mutableListOf<Text>()
-        var id = 0
-        var titleID = 0
-        var headlineID = 0
-        var bodyID = 0
-        list.forEach { line ->
-            id++
-            if (line[0].isDigit()) {
-                newList.add(Text.Title(titleID, line))
-                titleID++
-            } else if (id % 2 != 1 && titleID != 0) {
-                newList.add(Text.Headline(headlineID, line))
-                headlineID++
-            } else {
-                newList.add(Text.Body(bodyID, line))
-                bodyID++
-            }
-        }
-
-        return newList
-    }
 
     private fun setOnSeekbar(
         type: String,
@@ -335,18 +302,5 @@ class MainActivity : AppCompatActivity() {
         return editTextInput
     }
 
-    private fun makeSearch(sentence: String): Int {
-        var temp = -1
-
-        temp = organizedList.indexOfFirst { it is Text.Headline && it.headline.contains(sentence) }
-        if (temp > -1)
-            return temp
-
-        temp = organizedList.indexOfFirst { it is Text.Body && it.body.contains(sentence) }
-        if (temp > -1)
-            return temp
-
-        return temp
-    }
 
 }
