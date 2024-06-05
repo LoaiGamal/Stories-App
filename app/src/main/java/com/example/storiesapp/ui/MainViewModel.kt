@@ -10,7 +10,7 @@ import com.example.storiesapp.data.Text
 import org.zwobble.mammoth.DocumentConverter
 import org.zwobble.mammoth.Result
 
-class MainViewModel(application: Application): AndroidViewModel(application) {
+class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var _organizedList = MutableLiveData<List<Text>>()
     val organizedList: LiveData<List<Text>>
@@ -27,11 +27,12 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     // Split the document into sentences and filter it
 
 
-    private fun splitDocumentIntoSentences(rawText: String?): List<String>{
+    private fun splitDocumentIntoSentences(rawText: String?): List<String> {
         val lines = rawText!!.split("\n")
         return removeValuesViaIteration(lines.toMutableList())
 
     }
+
     private fun removeValuesViaIteration(listWithNullsAndEmpty: MutableList<String?>): List<String> {
         val iterator = listWithNullsAndEmpty.iterator()
         while (iterator.hasNext()) {
@@ -44,53 +45,50 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         return listWithNullsAndEmpty as List<String>
     }
 
+
     private fun convertStringListToTextList(list: List<String>): List<Text> {
         val newList = mutableListOf<Text>()
-        var id = 0
-        var titleID = 0
-        var headlineID = 0
-        var bodyID = 0
-        list.forEach { line ->
-            id++
-            if (line[0].isDigit()) {
-                newList.add(Text.Title(titleID, line))
-                titleID++
-            } else if (id % 2 != 1 && titleID != 0) {
-                newList.add(Text.Headline(headlineID, line))
-                headlineID++
+        val numberOfTitles = 9
+        var numberOfBodies = 0
+        for (i in list.indices) {
+            if (list[i][0].isDigit()) {
+                newList.add(Text.Title(i, list[i]))
+            } else if (i % 2 == 1) {
+                newList.add(Text.Headline((i - (numberOfTitles + numberOfBodies)), list[i]))
             } else {
-                newList.add(Text.Body(bodyID, line))
-                bodyID++
+                newList.add(Text.Body((i - (numberOfTitles + numberOfBodies + 1)), list[i]))
+                numberOfBodies++
             }
         }
-
         return newList
     }
 
-    fun getOrganizedList(){
+    fun getOrganizedList() {
         _organizedList.value = convertStringListToTextList(splitDocumentIntoSentences(rawText))
     }
 
-    fun highlightText(index: Int, body: Text.Body){
+    fun highlightText(index: Int, body: Text.Body) {
         _organizedList.value!![index].let {
             it as Text.Body
-            it.body= body.body
+            it.body = body.body
             it.spannableString = body.spannableString
         }
     }
 
     fun makeSearch(sentence: String): Int {
-        var temp = -1
+        var indexOfSearchedSentence = -1
 
+        indexOfSearchedSentence = organizedList.value!!.indexOfFirst {
+            it is Text.Headline && it.headline.contains(sentence)
+        }
+        if (indexOfSearchedSentence > -1)
+            return indexOfSearchedSentence
 
-        temp = organizedList.value!!.indexOfFirst { it is Text.Headline && it.headline.contains(sentence) }
-        if (temp > -1)
-            return temp
+        indexOfSearchedSentence =
+            organizedList.value!!.indexOfFirst { it is Text.Body && it.body.contains(sentence) }
+        if (indexOfSearchedSentence > -1)
+            return indexOfSearchedSentence
 
-        temp = organizedList.value!!.indexOfFirst { it is Text.Body && it.body.contains(sentence) }
-        if (temp > -1)
-            return temp
-
-        return temp
+        return indexOfSearchedSentence
     }
 }

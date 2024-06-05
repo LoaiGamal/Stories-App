@@ -11,10 +11,10 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:hint="Loai Gamal Mohamed El_Sayed"
-        android:textSize="16sp"
-        android:layout_marginTop="8dp"
+        android:textSize="@dimen/text_size"
+        android:layout_marginTop="@dimen/default_margin"
 
-        android:paddingHorizontal="10dp"
+        android:paddingHorizontal="@dimen/default_padding"
         android:textIsSelectable="true"
         />
 

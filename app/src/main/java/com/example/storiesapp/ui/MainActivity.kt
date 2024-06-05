@@ -25,8 +25,6 @@ import com.example.storiesapp.R
 import com.example.storiesapp.data.Text
 import com.example.storiesapp.databinding.RgbLayoutDialogBinding
 import com.example.storiesapp.databinding.SearchDialogBinding
-import org.zwobble.mammoth.DocumentConverter
-import org.zwobble.mammoth.Result
 
 class MainActivity : AppCompatActivity() {
     private lateinit var viewModel: MainViewModel
@@ -62,10 +60,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Set the app title
-        val text: String = getString(R.string.most_beautiful_short_stories)
-        val mSpannableString = SpannableString(text)
-        mSpannableString.setSpan(UnderlineSpan(), 0, mSpannableString.length, 0)
-
+        val mSpannableString = setAppTitle()
         val appTitleTxtView: TextView = findViewById((R.id.titleTxtView))
         appTitleTxtView.text = mSpannableString
 
@@ -74,16 +69,17 @@ class MainActivity : AppCompatActivity() {
         textAdapter = TextAdapter()
         viewModel.organizedList.observe(this) {
             textAdapter.submitList(it)
+            Log.i("LOGGER", "List: $it")
         }
         val textRecyclerView: RecyclerView = findViewById(R.id.textRecyclerView)
         textRecyclerView.adapter = textAdapter
         textRecyclerView.layoutManager = LinearLayoutManager(this)
         textAdapter.setOnTitleClickListener(object : TextAdapter.OnItemClickListener {
             override fun onTitleClicked(titleId: Int) {
-                Log.i("LOGGER", "Title ID: ${titleId.toString()}")
+                Log.i("LOGGER", "Title ID: $titleId")
                 val bodyID =
                     viewModel.organizedList.value!!.indexOfFirst { it is Text.Body && it.id == titleId }
-                Log.i("LOGGER", "Body Id: ${bodyID.toString()}")
+                Log.i("LOGGER", "Body Id: $bodyID")
                 textRecyclerView.smoothScrollToPosition(bodyID)
             }
         })
@@ -91,15 +87,21 @@ class MainActivity : AppCompatActivity() {
 
         textAdapter.setTextHighlightListener(object : TextAdapter.TextHighlightListener {
             override fun onTextHighlighted(text: SpannableString, index: Int) {
-                if (viewModel.organizedList.value!![index] is Text.Body) {
-                    var temp = viewModel.organizedList.value!![index] as Text.Body
-                    temp = Text.Body(index, temp.body, text)
-                    Log.d(
-                        "LOGGER",
-                        "before add: ${viewModel.organizedList.value!![index].toString()}"
-                    )
-                    viewModel.highlightText(index, temp)
-//                    Log.d("LOGGER", "after add: ${organizedList[index].toString()}")
+                try {
+                    if (viewModel.organizedList.value!![index] is Text.Body) {
+
+                        // temp is a variable that will hold the text we want to highlight from the list in ViewModel
+                        // after highlighting it will be sent to the ViewModel to save it in the list again
+                        var temp = viewModel.organizedList.value!![index] as Text.Body
+                        temp = Text.Body(index, temp.body, text)
+                        Log.d(
+                            "LOGGER",
+                            "before add: ${viewModel.organizedList.value!![index]}"
+                        )
+                        viewModel.highlightText(index, temp)
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_SHORT).show()
                 }
             }
         })
@@ -107,13 +109,12 @@ class MainActivity : AppCompatActivity() {
 
         val appTitle: TextView = findViewById(R.id.titleTxtView)
         textSize = appTitle.textSize / 4
-        Log.i("LOGGER", "Before Increasing: ${textSize.toString()}")
+        Log.i("LOGGER", "Before Increasing: $textSize")
 
         // Increase text size
         val increaseTextSizeBtn: ImageButton = findViewById(R.id.textSizeIncrease)
         increaseTextSizeBtn.setOnClickListener {
-            textSize += 4f
-            appTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize)
+            increaseAppTitleTextSize(appTitle)
             textAdapter.increaseTextSize()
         }
 
@@ -122,15 +123,79 @@ class MainActivity : AppCompatActivity() {
         val decreaseTextSizeBtn: ImageButton = findViewById(R.id.textSizeDecrease)
         decreaseTextSizeBtn.setOnClickListener {
             textAdapter.decreaseTextSize()
-            if (textSize - 4f <= 0f)
-                appTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize)
-            else {
-                textSize -= 4f
-                appTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize)
-            }
+            decreaseAppTitleTextSize(appTitle)
         }
 
         // Set the rgb dialog for change the text and background colors
+        val rgbDialog = setRgbDialog()
+
+        // Change text color
+        val changingTextColorBtn: Button = findViewById(R.id.changeTextColor)
+        changingTextColorBtn.setOnClickListener {
+            isText = true
+            rgbLayoutDialogBinding.redLayout.seekBar.progress = oldTextColors[0].toInt()
+            rgbLayoutDialogBinding.greenLayout.seekBar.progress = oldTextColors[1].toInt()
+            rgbLayoutDialogBinding.blueLayout.seekBar.progress = oldTextColors[2].toInt()
+            rgbDialog.show()
+        }
+
+
+        // Change background color
+        val backgroundChangingColorBtn: ImageButton = findViewById(R.id.changeBackgroundColor)
+        backgroundChangingColorBtn.setOnClickListener {
+            isText = false
+            rgbLayoutDialogBinding.redLayout.seekBar.progress = oldBackgroundColors[0].toInt()
+            rgbLayoutDialogBinding.greenLayout.seekBar.progress = oldBackgroundColors[1].toInt()
+            rgbLayoutDialogBinding.blueLayout.seekBar.progress = oldBackgroundColors[2].toInt()
+            rgbDialog.show()
+        }
+
+        // Set the search dialog
+        val searchDialog = setSearchDialog(textRecyclerView)
+
+        // Searching
+        val searchBtn: ImageButton = findViewById(R.id.searchBtn)
+        searchBtn.setOnClickListener {
+            searchDialog.show()
+        }
+
+    }
+
+    private fun setSearchDialog(textRecyclerView: RecyclerView): Dialog {
+        val searchDialog = Dialog(this).apply {
+            setContentView(searchLayoutDialogBinding.root)
+            window!!.setLayout(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setCancelable(false)
+        }
+
+        searchLayoutDialogBinding.cancelBtn.setOnClickListener {
+            searchDialog.dismiss()
+        }
+
+        searchLayoutDialogBinding.pickBtn.setOnClickListener {
+            searchedString = getSearchedString()
+            if (searchedString == null) {
+                Toast.makeText(this, "من فضلك أكتب نص تريد البحث عنه!", Toast.LENGTH_LONG).show()
+            } else {
+                val sentenceSearchedIndex = viewModel.makeSearch(searchedString!!)
+                if (sentenceSearchedIndex == -1)
+                    Toast.makeText(this, "هذه العبارة لم يتم العثور عليها", Toast.LENGTH_SHORT)
+                        .show()
+                else {
+                    textRecyclerView.smoothScrollToPosition(sentenceSearchedIndex)
+                }
+
+                searchLayoutDialogBinding.searchEditText.setText("")
+            }
+            searchDialog.dismiss()
+        }
+        return searchDialog
+    }
+
+    private fun setRgbDialog(): Dialog {
         val rgbDialog = Dialog(this).apply {
             setContentView(rgbLayoutDialogBinding.root)
             window!!.setLayout(
@@ -181,66 +246,28 @@ class MainActivity : AppCompatActivity() {
             }
             rgbDialog.dismiss()
         }
+        return rgbDialog
+    }
 
-        // Change text color
-        val changingTextColorBtn: Button = findViewById(R.id.changeTextColor)
-        changingTextColorBtn.setOnClickListener {
-            isText = true
-            rgbLayoutDialogBinding.redLayout.seekBar.progress = oldTextColors[0].toInt()
-            rgbLayoutDialogBinding.greenLayout.seekBar.progress = oldTextColors[1].toInt()
-            rgbLayoutDialogBinding.blueLayout.seekBar.progress = oldTextColors[2].toInt()
-            rgbDialog.show()
+    private fun decreaseAppTitleTextSize(appTitle: TextView) {
+        if (textSize - 4f <= 0f)
+            appTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize)
+        else {
+            textSize -= 4f
+            appTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize)
         }
+    }
 
+    private fun increaseAppTitleTextSize(appTitle: TextView) {
+        textSize += 4f
+        appTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize)
+    }
 
-        // Change background color
-        val backgroundChangingColorBtn: ImageButton = findViewById(R.id.changeBackgroundColor)
-        backgroundChangingColorBtn.setOnClickListener {
-            isText = false
-            rgbLayoutDialogBinding.redLayout.seekBar.progress = oldBackgroundColors[0].toInt()
-            rgbLayoutDialogBinding.greenLayout.seekBar.progress = oldBackgroundColors[1].toInt()
-            rgbLayoutDialogBinding.blueLayout.seekBar.progress = oldBackgroundColors[2].toInt()
-            rgbDialog.show()
-        }
-
-        // Set the search dialog
-        val searchDialog = Dialog(this).apply {
-            setContentView(searchLayoutDialogBinding.root)
-            window!!.setLayout(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            setCancelable(false)
-        }
-
-        searchLayoutDialogBinding.cancelBtn.setOnClickListener {
-            searchDialog.dismiss()
-        }
-
-        searchLayoutDialogBinding.pickBtn.setOnClickListener {
-            searchedString = getSearchedString()
-            if (searchedString == null) {
-                Toast.makeText(this, "من فضلك أكتب نص تريد البحث عنه!", Toast.LENGTH_LONG).show()
-            } else {
-                val sentenceSearchedIndex = viewModel.makeSearch(searchedString!!)
-                if (sentenceSearchedIndex == -1)
-                    Toast.makeText(this, "هذه العبارة لم يتم العثور عليها", Toast.LENGTH_SHORT)
-                        .show()
-                else {
-                    textRecyclerView.smoothScrollToPosition(sentenceSearchedIndex)
-                }
-
-                searchLayoutDialogBinding.searchEditText.setText("")
-            }
-            searchDialog.dismiss()
-        }
-
-        // Searching
-        val searchBtn: ImageButton = findViewById(R.id.searchBtn)
-        searchBtn.setOnClickListener {
-            searchDialog.show()
-        }
-
+    private fun setAppTitle(): SpannableString {
+        val text: String = getString(R.string.most_beautiful_short_stories)
+        val mSpannableString = SpannableString(text)
+        mSpannableString.setSpan(UnderlineSpan(), 0, mSpannableString.length, 0)
+        return mSpannableString
     }
 
 
@@ -295,10 +322,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getSearchedString(): String? {
-        val editTextInput: String?
         if (searchLayoutDialogBinding.searchEditText.text.toString() == "")
             return null
-        editTextInput = searchLayoutDialogBinding.searchEditText.text.toString()
+        val editTextInput: String = searchLayoutDialogBinding.searchEditText.text.toString()
         return editTextInput
     }
 

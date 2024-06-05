@@ -57,7 +57,6 @@ dependencies {
 
     // view model dependencies
     val lifecycle_version = "2.8.1"
-    val arch_version = "2.2.0"
 
     // ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
