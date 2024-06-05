@@ -13,7 +13,7 @@
         android:layout_margin="8dp"
         android:hint="Loai Gamal Mohamed El_Sayed"
         android:textColor="#071688"
-        android:textSize="@dimen/text_size"
+        android:textSize="16sp"
         />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

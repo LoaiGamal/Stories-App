@@ -11,13 +11,13 @@
         android:layout_height="200dp"
         android:background="@color/white"
         android:text="@string/temp_string"
-        android:textSize="@dimen/xlarge_text_size"
+        android:textSize="40sp"
         android:gravity="center"/>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="@dimen/default_margin"
+        android:layout_margin="16dp"
         android:orientation="vertical">
 
         <include layout="@layout/rgb_item_layout"
@@ -32,33 +32,33 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/default_margin"
+            android:layout_marginTop="8dp"
             android:orientation="horizontal">
 
             <Button
                 android:id="@+id/cancelBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="@dimen/default_margin"
+                android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:backgroundTint="#6A2323"
                 android:text="@string/cancel"
                 tools:ignore="UnusedAttribute"
                 style="?android:attr/buttonBarButtonStyle"
                 android:textColor="@color/white"
-                android:textSize="@dimen/text_title_size"/>
+                android:textSize="18sp"/>
             <Button
                 android:id="@+id/pickBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/default_margin"
+                android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:backgroundTint="@color/black"
                 android:text="@string/confirm"
                 tools:ignore="UnusedAttribute"
                 style="?android:attr/buttonBarButtonStyle"
                 android:textColor="@color/white"
-                android:textSize="@dimen/text_title_size"/>
+                android:textSize="18sp"/>
 
         </LinearLayout>
     </LinearLayout>
