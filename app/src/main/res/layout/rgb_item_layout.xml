@@ -14,7 +14,7 @@
         android:layout_weight="13"
         android:textAlignment="center"
         android:textColor="@color/black"
-        android:textSize="32sp"
+        android:textSize="@dimen/large_text_size"
         android:textStyle="bold"
         tools:background="@color/red"
         tools:text="R"
@@ -37,7 +37,7 @@
         android:layout_weight="12"
         android:textAlignment="center"
         android:textColor="@color/black"
-        android:textSize="32sp"
+        android:textSize="@dimen/large_text_size"
         android:textStyle="bold"
         tools:text="0" />
 
