@@ -27,8 +27,8 @@ import com.example.storiesapp.databinding.RgbLayoutDialogBinding
 import com.example.storiesapp.databinding.SearchDialogBinding
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var viewModel: MainViewModel
 
+    private lateinit var viewModel: MainViewModel
     private var textSize = 0f
     private lateinit var textAdapter: TextAdapter
     private var oldBackgroundColors: List<String> = listOf("255", "255", "255", "")
